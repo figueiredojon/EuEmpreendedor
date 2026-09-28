@@ -1,7 +1,7 @@
 import React from "react";
 import {StyleSheet, View, Image, Text} from "react-native";
 import Card from "../../components/card";
-import ButtonPattern from "../../components/button";
+import ButtonLogin from "../../components/buttons/buttonLogin";
 
 export default function Login({navigation}){
     return (
@@ -15,7 +15,7 @@ export default function Login({navigation}){
             </View>
 
             <View>
-                <ButtonPattern onPress={() => navigation.navigate('Dashboard')}/>
+                <ButtonLogin onPress={() => navigation.navigate('Dashboard')}/>
             </View>
         </Card>
     );

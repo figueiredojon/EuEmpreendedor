@@ -1,9 +1,9 @@
 import React from "react";
-import {StyleSheet, View, Text, Alert, TouchableOpacity} from "react-native";
+import {StyleSheet, View, Text, TouchableOpacity} from "react-native";
 
 
 
-export default function ButtonPattern({children, style, onPress}){
+export default function ButtonLogin({children, style, onPress}){
     return (
         <View style={style}>
             <TouchableOpacity 
