@@ -1,46 +1,50 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
-node_modules/
-
-# Expo
-.expo/
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
 dist/
-web-build/
-expo-env.d.ts
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Virtual environments
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Metro
-.metro-health-check*
+# Database
+db.sqlite3
+*.sqlite3
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# Django secret & local settings
+local_settings.py
+.env
 
-# macOS
-.DS_Store
-*.pem
+# Node / React Native
+node_modules/
+.expo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-# generated native folders
-/ios
-/android
-
-#Custom ignores
-.agents/
+# IDEs e Sistema Operacional
 .vscode/
-prototype/
+.idea/
+.DS_Store
+Thumbs.db

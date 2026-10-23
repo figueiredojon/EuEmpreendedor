@@ -8,7 +8,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 
 
 
-export default function Dashboard(){
+export default function Dashboard({navigation}){
     const recentes = [
         { id: '1', cliente: 'João Silva', valor: 'R$ 1.200,00', status: 'Aprovado', data: 'Hoje'},
         { id: '2', cliente: 'Maria Souza', valor: 'R$ 850,00', status: 'Pendente', data: 'Ontem'},
@@ -56,7 +56,7 @@ export default function Dashboard(){
                 <Text style={dashboardStyles.sectionTitle}>ATALHOS</Text>
                 
                 <View style={dashboardStyles.rowContainer}>
-                    <TouchableOpacity style={dashboardStyles.shortcutBtn}>
+                    <TouchableOpacity style={dashboardStyles.shortcutBtn} onPress={() => navigation.navigate('Orcamentos')}>
                         <View style={dashboardStyles.shortcutIconBox}>
                             <Entypo name="squared-plus" size={22} color="#0F172A"/>
                         </View>

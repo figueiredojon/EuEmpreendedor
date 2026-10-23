@@ -10,7 +10,7 @@ export default function ButtonLogin({children, style, onPress}){
                 style={buttonStyle.btnLogin}
                 onPress={onPress}
             >
-                <Text style={buttonStyle.title}>Login com Senha</Text>
+                <Text style={buttonStyle.title}>Login com senha</Text>
             {children}
             </TouchableOpacity>
         </View>
