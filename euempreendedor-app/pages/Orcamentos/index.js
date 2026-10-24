@@ -1,47 +1,98 @@
-import React, { useState } from "react";
-import {StyleSheet, View, Text, ScrollView, TouchableOpacity} from "react-native";
+import React, { useState, useCallback } from "react";
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Feather from '@expo/vector-icons/Feather';
+import { useFocusEffect } from "@react-navigation/native";
+import Feather from "@expo/vector-icons/Feather";
+import Ionicons from "@expo/vector-icons/Ionicons";
+
 import SearchInput from "../../components/searchInput";
 import SegmentedTabs from "../../components/segmentedTabs";
-import FilterChip from "../../components/filterChip";
 import OrcamentoCard from "../../components/orcamentoCard";
+import api from "../../services/api";
 
-// Dados fictícios (serão substituídos pela API Django)
-const orcamentos = [
-    { id: '1', cliente: 'João Ferreira', servico: 'Instalação elétrica', valor: 'R$1.200', status: 'Aprovado', data: '2026-09-16' },
-    { id: '2', cliente: 'Maria Santos', servico: 'Pintura sala + quartos', valor: 'R$2.800', status: 'Pendente', data: '2026-08-15' },
-    { id: '3', cliente: 'Pedro Costa', servico: 'Encanamento banheiro', valor: 'R$650', status: 'Aprovado', data: '2026-05-14' },
-    { id: '4', cliente: 'Carla Mendes', servico: 'Quadro de distribuição', valor: 'R$980', status: 'Pendente', data: '2026-06-16' },
-    { id: '5', cliente: 'Roberto Alves', servico: 'Reforma de cozinha', valor: 'R$4.500', status: 'Aprovado', data: '2025-09-10' },
-];
+const TABS = ["Todos", "Pendentes", "Aprovados"];
+const TAB_STATUS = { Pendentes: "PENDENTE", Aprovados: "APROVADO" };
 
-const TABS = ['Todos', 'Pendentes', 'Aprovados'];
-// Mapeia o nome da aba para o status correspondente
-const TAB_STATUS = { Pendentes: 'Pendente', Aprovados: 'Aprovado' };
+export default function Orcamentos({ navigation }) {
+    const [orcamentos, setOrcamentos] = useState([]);
+    const [busca, setBusca] = useState("");
+    const [aba, setAba] = useState("Todos");
+    const [loading, setLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
-const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-const anoAtual = 2026;
-const qtdeAnos = 20;
-const ANOS_ANTERIORES = [];
+    const carregarOrcamentos = async () => {
+        try {
+            setLoading(true);
+            const data = await api.get("/orcamentos/");
+            const lista = Array.isArray(data) ? data : (data.results || []);
+            setOrcamentos(lista);
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível carregar os orçamentos: " + error.message);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
 
-for (let i = anoAtual; i> anoAtual-qtdeAnos ;i--){
-    ANOS_ANTERIORES.push(i);
-};
+    useFocusEffect(
+        useCallback(() => {
+            carregarOrcamentos();
+        }, [])
+    );
 
-export default function Orcamentos({navigation}){
-    const [busca, setBusca] = useState('');
-    const [aba, setAba] = useState('Todos');
-    const [mesSelecionado, setmesSelecionado] = useState('null');
-    const [anoSelecionado, setanoSelecionado] = useState('null');
+    const onRefresh = () => {
+        setRefreshing(true);
+        carregarOrcamentos();
+    };
+
+    const handleExcluirOrcamento = (id, numero) => {
+        Alert.alert(
+            "Excluir Orçamento",
+            `Deseja realmente excluir o Orçamento #${numero}?`,
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/orcamentos/${id}/`);
+                            carregarOrcamentos();
+                        } catch (error) {
+                            Alert.alert("Erro", "Não foi possível excluir: " + error.message);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const formatMoeda = (valor) => {
+        return "R$ " + (Number(valor) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const formatDataExibicao = (dataStr) => {
+        if (!dataStr) return "";
+        try {
+            const [ano, mes, dia] = dataStr.split("-");
+            return `${dia}/${mes}/${ano}`;
+        } catch {
+            return dataStr;
+        }
+    };
 
     const termo = busca.trim().toLowerCase();
 
     const filtrados = orcamentos.filter((item) => {
-        const passaAba = aba === 'Todos' || item.status === TAB_STATUS[aba];
-        const passaBusca =
-            item.cliente.toLowerCase().includes(termo) ||
-            item.servico.toLowerCase().includes(termo);
+        const statusItem = (item.status || "").toUpperCase();
+        const passaAba = aba === "Todos" || statusItem === TAB_STATUS[aba];
+
+        const nomeCliente = (item.nome_cliente || "").toLowerCase();
+        const descricoes = (item.itens || []).map((i) => (i.descricao || "").toLowerCase()).join(" ");
+        const numero = String(item.numero || "");
+
+        const passaBusca = !termo || nomeCliente.includes(termo) || descricoes.includes(termo) || numero.includes(termo);
+
         return passaAba && passaBusca;
     });
 
@@ -49,8 +100,14 @@ export default function Orcamentos({navigation}){
         <SafeAreaView style={styles.background}>
             {/* CABEÇALHO */}
             <View style={styles.header}>
-                <Text style={styles.title}>Orçamentos</Text>
-                <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('NovoOrcamento')}>
+                <View style={styles.headerLeft}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <Feather name="arrow-left" size={22} color="#F8FAFC" />
+                    </TouchableOpacity>
+                    <Text style={styles.title}>Orçamentos</Text>
+                </View>
+
+                <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate("NovoOrcamento")}>
                     <Feather name="plus" size={20} color="#0F172A" />
                 </TouchableOpacity>
             </View>
@@ -58,35 +115,55 @@ export default function Orcamentos({navigation}){
             <SearchInput
                 value={busca}
                 onChangeText={setBusca}
-                placeholder="Buscar cliente ou serviço..."
+                placeholder="Buscar cliente, serviço ou nº..."
             />
 
             <View style={styles.block}>
                 <SegmentedTabs options={TABS} selected={aba} onSelect={setAba} />
             </View>
 
-            <View style={[styles.block, styles.chipsRow]}>
-                <FilterChip label="Setembro" active={false} onPress={() => {}} />
-                <FilterChip label="2026" active={false} onPress={() => {}} />
-            </View>
+            {loading && !refreshing ? (
+                <View style={styles.centerContainer}>
+                    <ActivityIndicator size="large" color="#FAF9F6" />
+                </View>
+            ) : (
+                <ScrollView
+                    style={styles.list}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FAF9F6" />
+                    }
+                >
+                    {filtrados.map((item) => {
+                        const primeiroServico = (item.itens && item.itens[0]?.descricao) || "Serviços diversos";
+                        return (
+                            <OrcamentoCard
+                                key={item.id}
+                                cliente={item.nome_cliente || `Orçamento #${item.numero}`}
+                                servico={primeiroServico}
+                                valor={formatMoeda(item.calcular_total)}
+                                status={item.status}
+                                data={formatDataExibicao(item.data_emissao)}
+                                onEdit={() => {}}
+                                onDelete={() => handleExcluirOrcamento(item.id, item.numero)}
+                            />
+                        );
+                    })}
 
-            <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-                {filtrados.map((item) => (
-                    <OrcamentoCard
-                        key={item.id}
-                        cliente={item.cliente}
-                        servico={item.servico}
-                        valor={item.valor}
-                        status={item.status}
-                        data={item.data}
-                        onEdit={() => {}}
-                        onDelete={() => {}}
-                    />
-                ))}
-                {filtrados.length === 0 && (
-                    <Text style={styles.empty}>Nenhum orçamento encontrado.</Text>
-                )}
-            </ScrollView>
+                    {filtrados.length === 0 && !loading && (
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="document-text-outline" size={48} color="#64748B" />
+                            <Text style={styles.empty}>Nenhum orçamento encontrado.</Text>
+                            <TouchableOpacity
+                                style={styles.emptyBtn}
+                                onPress={() => navigation.navigate("NovoOrcamento")}
+                            >
+                                <Text style={styles.emptyBtnText}>+ Criar Novo Orçamento</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </ScrollView>
+            )}
         </SafeAreaView>
     );
 }
@@ -94,43 +171,71 @@ export default function Orcamentos({navigation}){
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        backgroundColor: '#0F172A',
+        backgroundColor: "#0F172A",
         paddingHorizontal: 20,
         paddingTop: 10,
     },
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         paddingVertical: 16,
     },
+    headerLeft: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+    },
+    backBtn: {
+        padding: 4,
+    },
     title: {
-        color: '#F8FAFC',
+        color: "#F8FAFC",
         fontSize: 24,
-        fontFamily: 'PlusJakartaSans_700Bold',
+        fontFamily: "PlusJakartaSans_700Bold",
     },
     addBtn: {
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: '#FAF9F6',
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: "#FAF9F6",
+        justifyContent: "center",
+        alignItems: "center",
     },
     block: {
         marginTop: 12,
     },
-    chipsRow: {
-        flexDirection: 'row',
-        gap: 10,
-    },
     list: {
         marginTop: 16,
     },
+    centerContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 40,
+    },
+    emptyContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 60,
+        gap: 12,
+    },
     empty: {
-        color: '#94A3B8',
-        textAlign: 'center',
-        marginTop: 24,
-        fontFamily: 'PlusJakartaSans_700Bold',
+        color: "#94A3B8",
+        textAlign: "center",
+        fontFamily: "PlusJakartaSans_700Bold",
+        fontSize: 14,
+    },
+    emptyBtn: {
+        marginTop: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 12,
+        backgroundColor: "#1E293B",
+    },
+    emptyBtnText: {
+        color: "#F8FAFC",
+        fontSize: 13,
+        fontFamily: "PlusJakartaSans_700Bold",
     },
 });
