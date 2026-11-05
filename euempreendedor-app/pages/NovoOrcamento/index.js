@@ -137,14 +137,15 @@ export default function NovoOrcamento({ navigation }) {
                 })),
             };
 
-            await api.post("/orcamentos/", payload);
+            const orcamentoCriado = await api.post("/orcamentos/", payload);
 
             Alert.alert(
-                `Orçamento #${numeroGerado} salvo com sucesso no banco de dados.`,
+                "Sucesso",
+                `Orçamento #${numeroGerado} gerado com sucesso.`,
                 [
                     {
                         text: "Ver Orçamentos",
-                        onPress: () => navigation.navigate("Orcamentos"),
+                        onPress: () => navigation.navigate("ResumoOrcamento", {orcamento: orcamentoCriado}),
                     },
                 ]
             );
@@ -243,7 +244,7 @@ export default function NovoOrcamento({ navigation }) {
                 </View>
 
                 <ButtonPrimary
-                    title={salvando ? "Salvando orçamento..." : "Salvar Orçamento na API"}
+                    title={salvando ? "Gerando orçamento..." : "Gerar Orçamento "}
                     onPress={handleSalvarOrcamento}
                     style={salvando && { opacity: 0.7 }}
                 />

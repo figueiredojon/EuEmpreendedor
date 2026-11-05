@@ -40,7 +40,7 @@ export default function Clientes({ navigation }) {
     const carregarClientes = async () => {
         try {
             setLoading(true);
-            const data = await api.get(`/clientes/`);
+            const data = await api.get("/clientes/");
             setClientes(Array.isArray(data) ? data : (data.results || []));
         } catch (error) {
             Alert.alert("Erro", "Não foi possível carregar os clientes: " + error.message);
@@ -86,7 +86,7 @@ export default function Clientes({ navigation }) {
                 carregarClientes();
                 setClienteEmEdicao(null);
             } else {
-                await api.post(`/clientes/`, payload);
+                await api.post("/clientes/", payload);
                 Alert.alert("Sucesso", "Cliente cadastrado com sucesso!");
                 setModalVisible(false);
                 setNome("");

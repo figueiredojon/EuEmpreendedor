@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import NovoOrcamento from "./pages/NovoOrcamento";
 import Orcamentos from "./pages/Orcamentos";
 import Clientes from "./pages/Clientes";
+import ResumoOrcamento from "./pages/ResumoOrcamento";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ export default function Routes() {
                 <Stack.Screen name="Clientes" component={Clientes} options={{ headerShown: false }} />
                 <Stack.Screen name="Orcamentos" component={Orcamentos} options={{ headerShown: false }} />
                 <Stack.Screen name="NovoOrcamento" component={NovoOrcamento} options={{ headerShown: false }} />
+                <Stack.Screen name="ResumoOrcamento" component={ResumoOrcamento} options={{ headerShown: false}} />
             </Stack.Navigator>
         </NavigationContainer>
     );
