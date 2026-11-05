@@ -10,7 +10,7 @@ class Cliente(models.Model):
     prestador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='clientes')
     nome_cliente = models.CharField(max_length=200)
     telefone = models.CharField(max_length=20)
-    
+    email= models.EmailField(blank=True, default='')
     cnpj_cpf = models.CharField(max_length=20, blank=True, default='')
     endereco = models.CharField(max_length=255, blank=True, default='')
     

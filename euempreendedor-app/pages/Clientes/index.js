@@ -32,13 +32,15 @@ export default function Clientes({ navigation }) {
     const [salvando, setSalvando] = useState(false);
     const [nome, setNome] = useState("");
     const [telefone, setTelefone] = useState("");
-    const [cpfCnpj, setCpfCnpj] = useState("");
+    const [cnpj_cpf, setCnpj_cpf] = useState("");
     const [endereco, setEndereco] = useState("");
+
+    const [clienteEmEdicao, setClienteEmEdicao] = useState(null);
 
     const carregarClientes = async () => {
         try {
             setLoading(true);
-            const data = await api.get("/clientes/");
+            const data = await api.get(`/clientes/`);
             setClientes(Array.isArray(data) ? data : (data.results || []));
         } catch (error) {
             Alert.alert("Erro", "Não foi possível carregar os clientes: " + error.message);
@@ -61,26 +63,39 @@ export default function Clientes({ navigation }) {
 
     const handleSalvarCliente = async () => {
         if (!nome.trim() || !telefone.trim()) {
-            Alert.alert("Atenção", "Preencha ao menos o Nome e o Telefone do cliente.");
-            return;
+            return Alert.alert("Atenção", "Preencha ao menos o Nome e o Telefone do cliente.");
         }
-
+        
         setSalvando(true);
         try {
-            await api.post("/clientes/", {
+            //Unindo todas as informações num pacote de dados (payload)
+            const payload = {
                 nome_cliente: nome.trim(),
                 telefone: telefone.trim(),
-                cpf_cnpj: cpfCnpj.trim(),
+                cnpj_cpf: cnpj_cpf.trim(),
                 endereco: endereco.trim()
-            });
-
-            Alert.alert("Sucesso", "Cliente cadastrado com sucesso!");
-            setModalVisible(false);
-            setNome("");
-            setTelefone("");
-            setCpfCnpj("");
-            setEndereco("");
-            carregarClientes();
+            }
+            if (clienteEmEdicao){
+                await api.put(`/clientes/${clienteEmEdicao.id}/`, payload);
+                Alert.alert("Sucesso", "Cliente atualizado com sucesso!");
+                setModalVisible(false);
+                setNome("");
+                setTelefone("");
+                setCnpj_cpf("");
+                setEndereco("");
+                carregarClientes();
+                setClienteEmEdicao(null);
+            } else {
+                await api.post(`/clientes/`, payload);
+                Alert.alert("Sucesso", "Cliente cadastrado com sucesso!");
+                setModalVisible(false);
+                setNome("");
+                setTelefone("");
+                setCnpj_cpf("");
+                setEndereco("");
+                carregarClientes();
+            }
+            
         } catch (error) {
             Alert.alert("Erro ao cadastrar", error.message || "Verifique os dados e tente novamente.");
         } finally {
@@ -110,6 +125,24 @@ export default function Clientes({ navigation }) {
         );
     };
 
+    const modoEdicao = (cliente) => {
+        setClienteEmEdicao(cliente);
+        setNome(cliente.nome_cliente);
+        setTelefone(cliente.telefone);
+        setCnpj_cpf(cliente.cnpj_cpf || '');
+        setEndereco(cliente.endereco || '');
+        setModalVisible(true);
+    }
+
+    const cleanInputs = () => {
+        setClienteEmEdicao(null);
+        setNome("");
+        setTelefone("");
+        setCnpj_cpf("");
+        setEndereco("");
+        setModalVisible(true);
+    }
+    
     const filtrados = clientes.filter((c) => {
         const termo = busca.trim().toLowerCase();
         if (!termo) return true;
@@ -129,7 +162,7 @@ export default function Clientes({ navigation }) {
                     <Text style={styles.title}>Clientes</Text>
                 </View>
 
-                <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
+                <TouchableOpacity style={styles.addBtn} onPress={() => cleanInputs()}>
                     <Feather name="plus" size={20} color="#0F172A" />
                 </TouchableOpacity>
             </View>
@@ -178,6 +211,14 @@ export default function Clientes({ navigation }) {
                                 ) : null}
                             </View>
 
+                            <TouchableOpacity 
+                                style={styles.editBtn}
+                                onPress={() => {modoEdicao(item)}}
+                            >
+                                <Feather name="edit-2" size={14} color="#475569" />
+                            </TouchableOpacity>
+
+
                             <TouchableOpacity
                                 style={styles.deleteBtn}
                                 onPress={() => handleExcluirCliente(item.id, item.nome_cliente)}
@@ -209,7 +250,7 @@ export default function Clientes({ navigation }) {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Novo Cliente</Text>
+                            <Text style={styles.modalTitle}>{clienteEmEdicao ? "Editar Cliente" : "Novo Cliente"}</Text>
                             <TouchableOpacity onPress={() => setModalVisible(false)}>
                                 <Feather name="x" size={22} color="#94A3B8" />
                             </TouchableOpacity>
@@ -232,8 +273,8 @@ export default function Clientes({ navigation }) {
                             <LabeledInput
                                 label="CPF ou CNPJ (opcional)"
                                 placeholder="000.000.000-00"
-                                value={cpfCnpj}
-                                onChangeText={setCpfCnpj}
+                                value={cnpj_cpf}
+                                onChangeText={setCnpj_cpf}
                             />
                             <LabeledInput
                                 label="Endereço Completo (opcional)"
@@ -243,7 +284,7 @@ export default function Clientes({ navigation }) {
                             />
 
                             <ButtonPrimary
-                                title={salvando ? "Salvando..." : "Salvar Cliente"}
+                                title={salvando ? "Salvando..." : (clienteEmEdicao ? "Salvar Alterações" : "Salvar Cliente")}
                                 onPress={handleSalvarCliente}
                                 style={{ marginTop: 12, marginBottom: 12 }}
                             />
@@ -339,6 +380,14 @@ const styles = StyleSheet.create({
         color: "#64748B",
         fontSize: 12,
         fontFamily: "PlusJakartaSans_700Bold",
+    },
+    editBtn:{
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        backgroundColor: '#E5E7EB',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     deleteBtn: {
         width: 36,
