@@ -4,23 +4,25 @@ import Feather from '@expo/vector-icons/Feather';
 import StatusBadge from "./statusBadge";
 import getInitials from "../utils/getInitials";
 
-export default function OrcamentoCard({cliente, servico, valor, status, data, onEdit, onDelete}){
+
+export default function OrcamentoCard({cliente, servico, valor, status, data, onEdit, onDelete, onPress}){
     return (
-        <View style={cardStyle.card}>
+        <TouchableOpacity onPress={onPress}>
+            <View style={cardStyle.card}>
             <View style={cardStyle.avatar}>
                 <Text style={cardStyle.avatarText}>{getInitials(cliente)}</Text>
             </View>
 
             <View style={cardStyle.info}>
-                <View style={cardStyle.topRow}>
-                    <Text style={cardStyle.cliente}>{cliente}</Text>
-                    <Text style={cardStyle.valor}>{valor}</Text>
-                </View>
+                    <View style={cardStyle.topRow}>
+                        <Text style={cardStyle.cliente}>{cliente}</Text>
+                        <Text style={cardStyle.valor}>{valor}</Text>
+                    </View>
 
-                <View style={cardStyle.middleRow}>
-                    <Text style={cardStyle.servico}>{servico}</Text>
-                    <StatusBadge status={status} />
-                </View>
+                    <View style={cardStyle.middleRow}>
+                        <Text style={cardStyle.servico}>{servico}</Text>
+                        <StatusBadge status={status} />
+                    </View>
 
                 <View style={cardStyle.bottomRow}>
                     <Text style={cardStyle.data}>{data}</Text>
@@ -35,6 +37,7 @@ export default function OrcamentoCard({cliente, servico, valor, status, data, on
                 </View>
             </View>
         </View>
+        </TouchableOpacity>
     );
 }
 

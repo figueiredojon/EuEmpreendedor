@@ -1,11 +1,13 @@
 import React from "react";
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import getInitials from "../../utils/getInitials";
 import { SafeAreaView } from "react-native-safe-area-context";
 import StatusBadge from "../../components/statusBadge";
+import {gerarPdfOrcamento} from "../../services/pdfGenerator";
+import * as Sharing from "expo-sharing";
 
-export default function ResumoOrcamento({ route, navigation }) {
+export default function ResumoOrcamento({route, navigation}) {
     const formatMoeda = (valor) => {
         return Number(valor || 0).toLocaleString('pt-BR', {
             style: "currency",
@@ -36,8 +38,14 @@ export default function ResumoOrcamento({ route, navigation }) {
         } catch {
             return data;
         }
-        
-        
+    };
+
+    const handleGerarPdf = async () => {
+        try{
+            await gerarPdfOrcamento(orcamento)
+        } catch (error) {
+            Alert.alert('Erro', 'Não foi possível gerar o PDF' + error.message);
+        }
     };
 
     const { orcamento } = route.params || {};
@@ -101,13 +109,16 @@ export default function ResumoOrcamento({ route, navigation }) {
 
                     <View style={stylesResumo.validadeBox}>
                         <Text style={stylesResumo.validadeLabel}>Validade</Text>
-                        <Text style={stylesResumo.validadeDias}>30 dias</Text>
+                        <Text style={stylesResumo.validadeDias}>{formatData(orcamento?.validade)}</Text>
                     </View>
                 </View>
 
                 {/* BOTÕES DE AÇÃO */}
                 <View style={stylesResumo.actionsContainer}>
-                    <TouchableOpacity style={stylesResumo.btnPrimary}>
+                    <TouchableOpacity 
+                        style={stylesResumo.btnPrimary}
+                        onPress={() => handleGerarPdf()}
+                    >
                         <Feather name="file-text" size={18} color="#0F172A" />
                         <Text style={stylesResumo.btnPrimaryText}>Gerar PDF</Text>
                     </TouchableOpacity>

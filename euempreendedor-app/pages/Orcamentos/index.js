@@ -101,7 +101,7 @@ export default function Orcamentos({ navigation }) {
             {/* CABEÇALHO */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} style={styles.backBtn}>
                         <Feather name="arrow-left" size={22} color="#F8FAFC" />
                     </TouchableOpacity>
                     <Text style={styles.title}>Orçamentos</Text>
@@ -146,6 +146,7 @@ export default function Orcamentos({ navigation }) {
                                 data={formatDataExibicao(item.data_emissao)}
                                 onEdit={() => {}}
                                 onDelete={() => handleExcluirOrcamento(item.id, item.numero)}
+                                onPress={() => navigation.navigate('ResumoOrcamento', { orcamento: item})}
                             />
                         );
                     })}
