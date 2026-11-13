@@ -1,13 +1,17 @@
 import React from "react";
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Linking } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import getInitials from "../../utils/getInitials";
 import { SafeAreaView } from "react-native-safe-area-context";
 import StatusBadge from "../../components/statusBadge";
 import {gerarPdfOrcamento} from "../../services/pdfGenerator";
-import * as Sharing from "expo-sharing";
+
+export const api_ip = process.env.EXPO_PUBLIC_LOCAL_IP;
+
 
 export default function ResumoOrcamento({route, navigation}) {
+    const { orcamento } = route.params || {};
+    
     const formatMoeda = (valor) => {
         return Number(valor || 0).toLocaleString('pt-BR', {
             style: "currency",
@@ -48,7 +52,43 @@ export default function ResumoOrcamento({route, navigation}) {
         }
     };
 
-    const { orcamento } = route.params || {};
+    const handleEnviarWhatsapp = async () => {
+        try{
+            let tel = (orcamento?.telefone || "").replace(/\D/g, "");
+            if (tel.length>= 10 && !tel.startsWith("55")){
+                tel = `55${tel}`;  
+            }
+
+            const linkAprovacao = `${api_ip}/orcamento/${orcamento?.token_aprovacao || orcamento?.id}`;
+
+            const mensagem = `Olá, ${orcamento?.nome_cliente || "Cliente"}! 
+Segue seu orçamento #${orcamento?.numero || orcamento?.id} no valor de ${formatMoeda(orcamento?.calcular_total)}.
+
+Você pode conferir todos os detalhes e aprovar no link abaixo:
+
+${linkAprovacao}
+
+Copie e cole no seu navegador de preferência.
+
+Fico à disposição!`;
+
+            //links para quem tem o app instalado em quem não tem
+            const urlApp = `whatsapp://send?phone=${tel}&text=${encodeURIComponent(mensagem)}`;
+            const urlWeb = `https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}`;
+
+            const suportaApp = await Linking.canOpenURL(urlApp);
+
+            if (suportaApp) {
+                await Linking.openURL(urlApp);
+            } else {
+                await Linking.openURL(urlWeb);
+            }
+        } catch (error) {
+            Alert.alert('Erro', 'Não foi possível abrir o Whatsapp' + error.message);
+        }
+    }
+
+    
 
     return (
         <SafeAreaView style={stylesResumo.container}>
@@ -123,7 +163,10 @@ export default function ResumoOrcamento({route, navigation}) {
                         <Text style={stylesResumo.btnPrimaryText}>Gerar PDF</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={stylesResumo.btnSecondary}>
+                    <TouchableOpacity 
+                        style={stylesResumo.btnSecondary}
+                        onPress={() => handleEnviarWhatsapp()}
+                    >
                         <Feather name="share-2" size={18} color="#F8FAFC" />
                         <Text style={stylesResumo.btnSecondaryText}>Compartilhar</Text>
                     </TouchableOpacity>

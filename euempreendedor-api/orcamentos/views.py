@@ -58,6 +58,10 @@ class AprovacaoPublicoView(APIView):
             'mensagem': f'Orçamento {orcamento.status} com sucesso',
             'status': orcamento.status
         }, status=status.HTTP_200_OK)
+        
+def pagina_aprovacao_publica(request, token):
+    orcamento = get_object_or_404(Orcamento, token_aprovacao=token)
+    return render(request, 'aprovacao_publica.html', {'orcamento': orcamento})
 
 
 class CadastroUsuarioView(generics.CreateAPIView):
